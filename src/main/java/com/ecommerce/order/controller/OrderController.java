@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.ecom.dto.OrderResponse;
-import com.app.ecom.service.OrderService;
+import com.ecommerce.order.dto.OrderResponse;
+import com.ecommerce.order.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 

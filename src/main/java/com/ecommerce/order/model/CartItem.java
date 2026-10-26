@@ -11,7 +11,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "cart_items")
+@Entity
+@Table(name = "cart_items")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,16 +22,14 @@ public class CartItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", referencedColumnName = "id")
-    private Product product;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
+    @Column(name = "product_id", nullable = false)
+    private String productId;
 
     private Integer quantity;
-    private BigDecimal price; 
+    private BigDecimal unitPrice;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

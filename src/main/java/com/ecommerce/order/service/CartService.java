@@ -2,17 +2,13 @@ package com.ecommerce.order.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.app.ecom.dto.CartItemRequest;
-import com.app.ecom.model.CartItem;
-import com.app.ecom.model.Product;
-import com.app.ecom.model.User;
-import com.app.ecom.repository.CartItemRepository;
-import com.app.ecom.repository.ProductRepository;
-import com.app.ecom.repository.UserRepository;
+import com.ecommerce.order.dto.CartItemRequest;
+import com.ecommerce.order.dto.CartItemResponse;
+import com.ecommerce.order.model.CartItem;
+import com.ecommerce.order.repository.CartItemRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,64 +18,62 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class CartService {
 
-    private final ProductRepository productRepository;
+    // Temporary fixed price. Replace with the real price from product-service.
+    private static final BigDecimal TEMP_UNIT_PRICE = BigDecimal.valueOf(1000);
+
     private final CartItemRepository cartItemRepository;
-    private final UserRepository userRepository;
 
     public boolean addToCart(String userId, CartItemRequest request) {
-        // Look for product
-        Optional<Product> productOpt = productRepository.findById(request.getProductId());
-        if (productOpt.isEmpty())
+        // Stock is owned by product-service, so it is not checked here yet.
+        if (request.getProductId() == null
+                || request.getQuantity() == null || request.getQuantity() < 1) {
             return false;
+        }
 
-        Product product = productOpt.get();
-        if (product.getStockQuantity() < request.getQuantity())
-            return false;
+        String productId = String.valueOf(request.getProductId());
+        CartItem cartItem = cartItemRepository
+                .findByUserIdAndProductId(userId, productId)
+                .orElse(null);
 
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-        
-        if (userOpt.isEmpty())
-            return false;
-
-        User user = userOpt.get();
-
-        CartItem existingCartItem = cartItemRepository.findByUserAndProduct(user, product);
-        if (existingCartItem != null) {
+        if (cartItem != null) {
             // Update the quantity
-            existingCartItem.setQuantity(existingCartItem.getQuantity() + request.getQuantity());
-            existingCartItem.setPrice(product.getPrice().multiply(BigDecimal.valueOf(existingCartItem.getQuantity())));
-            cartItemRepository.save(existingCartItem);
+            cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
         } else {
             // Create new cart item
-            CartItem cartItem = new CartItem();
-            cartItem.setUser(user);
-            cartItem.setProduct(product);
+            cartItem = new CartItem();
+            cartItem.setUserId(userId);
+            cartItem.setProductId(productId);
             cartItem.setQuantity(request.getQuantity());
-            cartItem.setPrice(product.getPrice().multiply(BigDecimal.valueOf(request.getQuantity())));
-            cartItemRepository.save(cartItem);
         }
+
+        cartItem.setUnitPrice(TEMP_UNIT_PRICE);
+        cartItemRepository.save(cartItem);
         return true;
     }
 
-    public boolean deleteItemFromCart(String userId, Long productId) {
-        Optional<Product> productOpt = productRepository.findById(productId);
-        Optional<User> userOpt = userRepository.findById(Long.valueOf(userId));
-
-        if (productOpt.isPresent() && userOpt.isPresent()) {
-            cartItemRepository.deleteByUserAndProduct(userOpt.get(), productOpt.get());
-            return true;
-        }
-        return false;
+    public boolean deleteItemFromCart(String userId, String productId) {
+        return cartItemRepository.deleteByUserIdAndProductId(userId, productId) > 0;
     }
 
-    public List<CartItem> getCart(String userId) {
-        return userRepository.findById(Long.valueOf(userId))
-                .map(cartItemRepository::findByUser)
-                .orElseGet(List::of);
+    public List<CartItemResponse> getCart(String userId) {
+        return cartItemRepository.findByUserId(userId).stream()
+                .map(CartService::mapToCartItemResponse)
+                .toList();
     }
 
     public void clearCart(String userId) {
-        userRepository.findById(Long.valueOf(userId))
-                .ifPresent(cartItemRepository::deleteByUser);
+        cartItemRepository.deleteByUserId(userId);
+    }
+
+    private static CartItemResponse mapToCartItemResponse(CartItem item) {
+        CartItemResponse response = new CartItemResponse();
+        response.setId(item.getId());
+        response.setProductId(item.getProductId());
+        response.setQuantity(item.getQuantity());
+        response.setPrice(item.getUnitPrice());
+        response.setTotalPrice(item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        response.setCreatedAt(item.getCreatedAt());
+        response.setUpdatedAt(item.getUpdatedAt());
+        return response;
     }
 }
