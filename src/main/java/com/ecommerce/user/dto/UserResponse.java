@@ -1,15 +1,15 @@
-package com.app.ecom.dto;
+package com.ecommerce.user.dto;
 
 import java.time.LocalDateTime;
 
-import com.app.ecom.model.UserRole;
+import com.ecommerce.user.model.UserRole;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
 
 @Data
 public class UserResponse {
-    private Long id;
+    private String id;
     private String firstName;
     private String lastName;
     private String email;

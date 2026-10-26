@@ -1,13 +1,13 @@
-package com.app.ecom.controller;
+package com.ecommerce.user.controller;
 
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.app.ecom.dto.UserRequest;
-import com.app.ecom.dto.UserResponse;
-import com.app.ecom.service.UserService;
+import com.ecommerce.user.dto.UserRequest;
+import com.ecommerce.user.dto.UserResponse;
+import com.ecommerce.user.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
@@ -31,7 +31,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserById(@PathVariable String id) {
         UserResponse user = userService.fetchUserById(id);
         if (user == null) {
             return ResponseEntity.notFound().build();
@@ -41,7 +41,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long id,
+            @PathVariable String id,
             @RequestBody UserRequest request) {
         UserResponse user = userService.updateUser(id, request);
         if (user == null) {

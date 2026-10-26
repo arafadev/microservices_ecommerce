@@ -1,0 +1,9 @@
+# Test-only overrides: keep the build independent of Atlas credentials and network.
+# auto-index-creation=false keeps the Mongo connection lazy, so contextLoads
+# verifies the Spring wiring without needing a reachable database.
+spring:
+  mongodb:
+    uri: mongodb://localhost:27017/userdb-test
+  data:
+    mongodb:
+      auto-index-creation: false
