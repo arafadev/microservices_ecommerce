@@ -3,6 +3,12 @@ package com.ecommerce.order.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.ecommerce.order.clients.ProductServiceClient;
+import com.ecommerce.order.clients.UserServiceClient;
+import com.ecommerce.order.dto.ProductResponse;
+import com.ecommerce.order.dto.UserResponse;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.stereotype.Service;
 
 import com.ecommerce.order.dto.CartItemRequest;
@@ -22,15 +28,38 @@ public class CartService {
     private static final BigDecimal TEMP_UNIT_PRICE = BigDecimal.valueOf(1000);
 
     private final CartItemRepository cartItemRepository;
+    private final ProductServiceClient productServiceClient;
+    private final UserServiceClient userServiceClient;
+
+//        @CircuitBreaker(name = "productService", fallbackMethod = "addToCartFallBack")
+
+    @Retry(name = "retryBreaker", fallbackMethod = "addToCartFallBack")
 
     public boolean addToCart(String userId, CartItemRequest request) {
-        // Stock is owned by product-service, so it is not checked here yet.
+
         if (request.getProductId() == null
                 || request.getQuantity() == null || request.getQuantity() < 1) {
             return false;
         }
 
         String productId = String.valueOf(request.getProductId());
+        ProductResponse productResponse = productServiceClient.getProductDetails(productId);
+
+        if(productResponse == null){
+            return false;
+        }
+
+        if(productResponse.getStockQuantity() < request.getQuantity())
+        {
+            return  false;
+        }
+
+        UserResponse userResponse = userServiceClient.getUserDetails(userId);
+
+        if(userResponse == null){
+            return false;
+        }
+
         CartItem cartItem = cartItemRepository
                 .findByUserIdAndProductId(userId, productId)
                 .orElse(null);
@@ -49,6 +78,13 @@ public class CartService {
         cartItem.setUnitPrice(TEMP_UNIT_PRICE);
         cartItemRepository.save(cartItem);
         return true;
+    }
+
+    public boolean addToCartFallBack(String userId,
+                                     CartItemRequest request,
+                                     Exception exception) {
+        exception.printStackTrace();
+        return false;
     }
 
     public boolean deleteItemFromCart(String userId, String productId) {

@@ -1,4 +1,4 @@
-package com.ecommerce.order.clients;
+package com.ecommerce.order.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

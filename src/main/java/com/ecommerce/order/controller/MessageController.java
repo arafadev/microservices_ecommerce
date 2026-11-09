@@ -1,13 +1,11 @@
 package com.ecommerce.order.controller;
 
-import com.ecommerce.order.dto.OrderResponse;
-import com.ecommerce.order.service.OrderService;
-import lombok.RequiredArgsConstructor;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RefreshScope
@@ -17,8 +15,12 @@ public class MessageController {
     private String message;
 
     @GetMapping("/message")
-    public String getMessage(){
+    @RateLimiter(name = "rateBreaker", fallbackMethod = "getMessageFallback")
+    public String getMessage() {
         return message;
     }
 
+    public String getMessageFallback(Exception e) {
+        return "Hello Fallback";
+    }
 }

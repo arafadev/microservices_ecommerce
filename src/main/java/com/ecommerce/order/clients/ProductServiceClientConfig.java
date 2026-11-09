@@ -1,17 +1,29 @@
 package com.ecommerce.order.clients;
 
-import com.ecommerce.order.dto.ProductResponse;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.service.annotation.GetExchange;
-import org.springframework.web.service.annotation.HttpExchange;
 
-@HttpExchange
-public interface ProductServiceClient {
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.support.RestClientAdapter;
+import org.springframework.web.service.invoker.HttpServiceProxyFactory;
 
-    @GetExchange("/api/products/{id}")
-    ProductResponse getProductDetails(@PathVariable String id){
+@Configuration
+public class ProductServiceClientConfig{
 
+    @Bean
+    public ProductServiceClient productServiceClientInterface(@LoadBalanced RestClient.Builder restClientBuilder){
 
+        RestClient restClient = restClientBuilder.baseUrl("http://product-service")
+                .defaultStatusHandler(HttpStatusCode::is4xxClientError, (request, response) -> {})
+                .build();
+
+        RestClientAdapter adapter = RestClientAdapter.create(restClient);
+
+        HttpServiceProxyFactory factory = HttpServiceProxyFactory.builderFor(adapter).build();
+
+        return factory.createClient(ProductServiceClient.class);
     }
 
 }
