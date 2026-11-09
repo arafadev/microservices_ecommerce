@@ -32,7 +32,7 @@ public class ProductService {
     }
 
     public ProductResponse fetchProductById(Long id) {
-        return productRepository.findById(id)
+        return productRepository.findByIdAndActiveTrue(id)
                 .map(this::mapToProductResponse)
                 .orElse(null);
     }

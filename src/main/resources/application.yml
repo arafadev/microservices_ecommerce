@@ -3,26 +3,5 @@ spring:
     name: product-service
 
   config:
-    import:
-      # .env supplies the DB_USER / DB_PASSWORD / MONGO_URI placeholders that
-      # the config server's product-service.yml refers to. Spring Boot does not
-      # read .env implicitly; [.properties] parses the extensionless file.
-      # Listed twice for the same reason as the config server's
-      # search-locations: the working directory depends on the launcher.
-      - optional:file:./.env[.properties]
-      - optional:file:./product/.env[.properties]
-      - optional:configserver:http://localhost:8888
+    import: optional:configserver:http://localhost:8888
 
-  # Cloud Bus transport. Kept local rather than in the config server so a bus
-  # refresh still reaches this service while the config server is restarting.
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
