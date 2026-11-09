@@ -1,62 +1,52 @@
 spring:
   datasource:
-    url: jdbc:postgresql://postgres:5432/order
+    url: jdbc:postgresql://localhost:5432/ecommerce
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-  cloud:
-    stream:
-      bindings:
-        createOrder-out-0:
-          destination: order.exchange
-          content-type: application/json
-
-  #      rabbit:
-  #        bindings:
-  #          createOrder-out-0:
-  #            producer:
-  #              routing-key-expression: '''order.tracking'''
-  #  rabbitmq:
-  #    host: ${RABBITMQ_HOST:localhost}
-  #    port: ${RABBITMQ_PORT:5672}
-  #    username: ${RABBITMQ_USERNAME:guest}
-  #    password: ${RABBITMQ_PASSWORD:guest}
-  #    virtual-host: ${RABBITMQ_VHOST:guest}
-  #    connection-timeout: 30000
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    connection-timeout: 30000
   jpa:
     database: POSTGRESQL
     show-sql: true
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
 
 server:
-  port: 8083
-
-#rabbitmq:
-#  exchange:
-#    name: order.exchange
-#  queue:
-#    name: order.queue
-#  routing:
-#    key: order.tracking
+  port: 8081
 
 management:
   endpoints:
     web:
       exposure:
         include: "*"
-  endpoint:
-    health:
-      show-details: always
-
+  tracing:
+    sampling:
+      probability: 1.0
 
 app:
-  message: "Hello Order!"
+  message: "Hello Product!"
 
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://eureka:8761/eureka/
+      defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
 
+
+logging:
+  file:
+    name: logs/${spring.application.name}.log
+  logback:
+    rollingpolicy:
+      max-file-size: 5MB
+      max-history: 7

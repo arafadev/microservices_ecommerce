@@ -20,6 +20,16 @@ public class ProductController {
         this.productService = productService;
     }
 
+    @GetMapping("/simulate")
+    public ResponseEntity<String> simulateFailure(
+            @RequestParam(defaultValue = "false") boolean fail) {
+        if (fail) {
+            throw new RuntimeException("Simulated Failure For Testing");
+        }
+        return ResponseEntity.ok("Product Service is OK");
+    }
+
+
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.fetchAllProducts());

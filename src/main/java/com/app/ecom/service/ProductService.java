@@ -46,7 +46,6 @@ public class ProductService {
                 .orElse(null);
     }
 
-    // حذف فعلي من الداتابيز
     public boolean deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
             return false;

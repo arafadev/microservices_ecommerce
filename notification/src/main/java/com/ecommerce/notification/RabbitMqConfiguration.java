@@ -1,5 +1,5 @@
 
-package com.ecommerce.order.config;
+package com.ecommerce.notification;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -23,10 +23,6 @@ public class RabbitMqConfiguration {
     @Value("${rabbitmq.routing.key}")
     private String routingKey;
 
-    @Bean
-    public Queue queue() {
-        return QueueBuilder.durable(queueName).build();
-    }
 
     @Bean
     public TopicExchange exchange() {
@@ -54,15 +50,4 @@ public class RabbitMqConfiguration {
         return new JacksonJsonMessageConverter();
     }
 
-    @Bean
-    public RabbitTemplate rabbitTemplate(
-            ConnectionFactory connectionFactory,
-            MessageConverter messageConverter) {
-
-        RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter);
-        template.setExchange(exchangeName);
-
-        return template;
-    }
 }

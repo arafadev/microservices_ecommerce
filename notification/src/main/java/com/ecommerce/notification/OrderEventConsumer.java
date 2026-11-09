@@ -1,53 +1,43 @@
-
 package com.ecommerce.notification;
 
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
-import org.springframework.beans.factory.annotation.Value;
+
+
+import com.ecommerce.notification.payload.OrderCreatedEvent;
+import com.ecommerce.notification.payload.OrderStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
-@Configuration
-public class RabbitMqConfiguration {
+import java.util.function.Consumer;
 
-    @Value("${rabbitmq.queue.name}")
-    private String queueName;
+@Service
+@Slf4j
+public class OrderEventConsumer {
 
-    @Value("${rabbitmq.exchange.name}")
-    private String exchangeName;
+     @RabbitListener(queues = "${rabbitmq.queue.name}")
+    public void handleOrderEvent(OrderCreatedEvent orderEvent){
+        System.out.println("Received Order Event: " + orderEvent);
 
-    @Value("${rabbitmq.routing.key}")
-    private String routingKey;
+        long orderId = orderEvent.getOrderId();
+        OrderStatus orderStatus = orderEvent.getStatus();
 
+        System.out.println("Order ID: " + orderId);
+        System.out.println("Order Status: " + orderStatus);
 
-    @Bean
-    public TopicExchange exchange() {
-        return ExchangeBuilder.topicExchange(exchangeName)
-                .durable(true)
-                .build();
+        // Update Database
+        // Send Notification
+        // Send Emails
+        // Generate Invoice
+        // Send Seller Notification
+
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue)
-                .to(exchange)
-                .with(routingKey);
+    public Consumer<OrderCreatedEvent> orderCreated() {
+        return event -> {
+            log.info("Received order created event for order: {}", event.getOrderId());
+            log.info("Received order created event for user id: {}", event.getUserId());
+        };
     }
-
-    @Bean
-    public AmqpAdmin amqpAdmin(ConnectionFactory connectionFactory) {
-        RabbitAdmin admin = new RabbitAdmin(connectionFactory);
-        admin.setAutoStartup(true);
-        return admin;
-    }
-
-    @Bean
-    public MessageConverter messageConverter() {
-        return new JacksonJsonMessageConverter();
-    }
-
 }

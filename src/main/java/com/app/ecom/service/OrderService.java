@@ -2,9 +2,12 @@ package com.app.ecom.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +30,13 @@ public class OrderService {
     private final CartService cartService;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final RabbitTemplate rabbitTemplate;
+
+    @Value("${rabbitmq.exchange.name}")
+    private String exchangeName;
+
+    @Value("${rabbitmq.routing.key}")
+    private String routingKey;
 
     @Transactional
     public Optional<OrderResponse> createOrder(String userId) {
@@ -70,6 +80,17 @@ public class OrderService {
         // Clear the cart
         cartService.clearCart(userId);
 
+        // Publish order created event
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                savedOrder.getId(),
+                savedOrder.getUserId(),
+                savedOrder.getStatus(),
+                mapToOrderItemDTOs(savedOrder.getItems()),
+                savedOrder.getTotalAmount(),
+                savedOrder.getCreatedAt()
+        );
+        streamBridge.send("createOrder-out-0", event);
+
         return Optional.of(mapToOrderResponse(savedOrder));
     }
 
@@ -88,7 +109,7 @@ public class OrderService {
                         item.getProductId(),
                         item.getQuantity(),
                         item.getPrice(),
-                        item.getPrice()   // price مخزّن أصلًا كإجمالي (سعر الوحدة × الكمية)
+                        item.getPrice()
                 ))
                 .collect(Collectors.toList());
     }

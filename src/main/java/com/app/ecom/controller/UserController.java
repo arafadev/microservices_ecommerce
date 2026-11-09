@@ -2,6 +2,9 @@ package com.app.ecom.controller;
 
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +14,7 @@ import com.app.ecom.service.UserService;
 
 @RestController
 @RequestMapping("/api/users")
+@Slf4j
 public class UserController {
 
     private final UserService userService;
@@ -32,6 +36,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        logger.info("request received from users ::: " , id);
         UserResponse user = userService.fetchUserById(id);
         if (user == null) {
             return ResponseEntity.notFound().build();
