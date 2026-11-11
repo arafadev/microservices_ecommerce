@@ -25,6 +25,11 @@ public class RabbitMqConfiguration {
 
 
     @Bean
+    public Queue queue() {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
     public TopicExchange exchange() {
         return ExchangeBuilder.topicExchange(exchangeName)
                 .durable(true)
