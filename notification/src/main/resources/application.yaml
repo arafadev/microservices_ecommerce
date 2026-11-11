@@ -1,22 +1,39 @@
 spring:
   application:
     name: notification
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-    virtual-host: ${RABBITMQ_VHOST:/}
-    connection-timeout: 30000
+  # ep 298: not used anymore (Kafka binder)
+  # rabbitmq:
+  #   host: ${RABBITMQ_HOST:localhost}
+  #   port: ${RABBITMQ_PORT:5672}
+  #   username: ${RABBITMQ_USERNAME:guest}
+  #   password: ${RABBITMQ_PASSWORD:guest}
+  #   virtual-host: ${RABBITMQ_VHOST:/}
+  #   connection-timeout: 30000
+
+  # ep 292: Spring Cloud Function + Spring Cloud Stream
+  cloud:
+    function:
+      definition: orderCreated            # the Consumer<OrderCreatedEvent> bean in OrderEventConsumer
+    stream:
+      function:
+        definition: orderCreated
+      bindings:
+        orderCreated-in-0:
+          destination: order.exchange     # Kafka: the topic name (with RabbitMQ it was the exchange)
+          group: notification-group       # Kafka: the consumer group (with RabbitMQ: queue order.exchange.notification-group)
+      # ep 298: Kafka binder
+      kafka:
+        binder:
+          brokers: localhost:9092
 
 server:
   port: 8084
 
-
-rabbitmq:
-  exchange:
-    name: order.exchange
-  queue:
-    name: order.queue
-  routing:
-    key: order.tracking
+# ep 294/298: was used by RabbitMqConfiguration and @RabbitListener, both gone now
+# rabbitmq:
+#   exchange:
+#     name: order.exchange
+#   queue:
+#     name: order.queue
+#   routing:
+#     key: order.tracking
