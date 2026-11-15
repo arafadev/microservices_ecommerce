@@ -1,93 +1,150 @@
 package com.ecommerce.user.service;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
-import com.ecommerce.user.dto.AddressDto;
 import com.ecommerce.user.dto.UserRequest;
-import com.ecommerce.user.dto.UserResponse;
-import com.ecommerce.user.model.Address;
-import com.ecommerce.user.model.User;
-import com.ecommerce.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
-public class UserService {
+public class KeyCloakAdminService {
 
-    private final UserRepository userRepository;
+    @Value("${keycloak.admin.username}")
+    private String adminUsername;
 
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    @Value("${keycloak.admin.password}")
+    private String adminPassword;
+
+    @Value("${keycloak.admin.server-url}")
+    private String keycloakServerUrl;
+
+    @Value("${keycloak.admin.realm}")
+    private String realm;
+
+    @Value("${keycloak.admin.client-id}")
+    private String clientId;
+
+    @Value("${keycloak.admin.client-uid}")
+    private String clientUid;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+
+    public String getAdminAccessToken() {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("client_id", clientId);
+        params.add("username", adminUsername);
+        params.add("password", adminPassword);
+        params.add("grant_type", "password");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<MultiValueMap<String, String>> entity =
+                new HttpEntity<>(params, headers);
+
+        String url = keycloakServerUrl + "/realms/" + realm + "/protocol/openid-connect/token";
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                url,
+                entity,
+                Map.class
+        );
+
+        return (String) response.getBody().get("access_token");
     }
 
-    public List<UserResponse> fetchAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::mapToUserResponse)
-                .collect(Collectors.toList());
-    }
+    public String createUser(String token, UserRequest userRequest) {
 
-    public void createUser(UserRequest request) {
-        User user = new User();
-        mapToUserEntity(user, request);
-        userRepository.save(user);
-    }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
 
-    public UserResponse updateUser(String id, UserRequest request) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    mapToUserEntity(user, request);
-                    return mapToUserResponse(userRepository.save(user));
-                })
-                .orElse(null);
-    }
+        Map<String, Object> userPayload = new HashMap<>();
+        userPayload.put("username", userRequest.getUsername());
+        userPayload.put("email", userRequest.getEmail());
+        userPayload.put("enabled", true);
+        userPayload.put("firstName", userRequest.getFirstName());
+        userPayload.put("lastName", userRequest.getLastName());
 
-    public UserResponse fetchUserById(String id) {
-        return userRepository.findById(id)
-                .map(this::mapToUserResponse)
-                .orElse(null);
-    }
+        Map<String, Object> credential = new HashMap<>();
+        credential.put("type", "password");
+        credential.put("value", userRequest.getPassword());
+        credential.put("temporary", false);
 
-    // Request DTO -> Entity
-    private void mapToUserEntity(User user, UserRequest request) {
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
+        userPayload.put("credentials", List.of(credential));
 
-        if (request.getAddress() != null) {
-            Address address = user.getAddress() != null ? user.getAddress() : new Address();
-            address.setStreet(request.getAddress().getStreet());
-            address.setCity(request.getAddress().getCity());
-            address.setState(request.getAddress().getState());
-            address.setCountry(request.getAddress().getCountry());
-            address.setZipCode(request.getAddress().getZipCode());
-            user.setAddress(address);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(userPayload, headers);
+
+        String url = keycloakServerUrl + "/admin/realms/" + realm + "/users";
+
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                url,
+                entity,
+                String.class
+        );
+
+        if (!HttpStatus.CREATED.equals(response.getStatusCode())) {
+            throw new RuntimeException("Failed to create user in keycloak " + response.getBody());
         }
-    }
 
-    // Entity -> Response DTO
-    private UserResponse mapToUserResponse(User user) {
-        UserResponse response = new UserResponse();
-        response.setId(user.getId());
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setEmail(user.getEmail());
-        response.setPhone(user.getPhone());
-        response.setRole(user.getRole());
-        response.setCreatedAt(user.getCreatedAt());
-        response.setUpdatedAt(user.getUpdatedAt());
-
-        if (user.getAddress() != null) {
-            AddressDto addressDto = new AddressDto();
-            addressDto.setStreet(user.getAddress().getStreet());
-            addressDto.setCity(user.getAddress().getCity());
-            addressDto.setState(user.getAddress().getState());
-            addressDto.setCountry(user.getAddress().getCountry());
-            addressDto.setZipCode(user.getAddress().getZipCode());
-            response.setAddress(addressDto);
+        // Extract Keycloak user id
+        URI location = response.getHeaders().getLocation();
+        if (location == null) {
+            throw new RuntimeException("Keycloak did not return Location Header " + response.getBody());
         }
 
-        return response;
+        String path = location.getPath();
+        return path.substring(path.lastIndexOf("/") + 1);
+    }
+
+    private Map<String, Object> getRealmRoleRepresentation(String token,
+                                                           String roleName) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(token);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String url = keycloakServerUrl + "/admin/realms/" +
+                realm + "/clients/" + clientUid + "/roles/" + roleName;
+        ResponseEntity<Map> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                Map.class
+        );
+
+        return response.getBody();
+    }
+
+    public void assignRealmRoleToUser(String username, String roleName, String userId) {
+        String token = getAdminAccessToken();
+        Map<String, Object> roleRep = getRealmRoleRepresentation(
+                token, roleName
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(token);
+
+        HttpEntity<List<Map<String, Object>>> entity =
+                new HttpEntity<>(List.of(roleRep), headers);
+
+        String url = keycloakServerUrl + "/admin/realms/" +
+                realm + "/users/" + userId + "/role-mappings/clients/" + clientUid;
+
+        ResponseEntity<Void> response = restTemplate.postForEntity(
+                url, entity, Void.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException(
+                    "Failed to assign role " + roleName +
+                            " to user " + username +
+                            ": HTTP " + response.getStatusCode()
+            );
+        }
     }
 }

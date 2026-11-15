@@ -8,5 +8,8 @@ public class UserRequest {
     private String lastName;
     private String email;
     private String phone;
+    private String username;
     private AddressDto address;
+    private String password;
+
 }
