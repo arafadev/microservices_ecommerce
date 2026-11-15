@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.order.dto.CartItemResponse;
+import com.ecommerce.order.dto.OrderCreatedEvent;
 import com.ecommerce.order.dto.OrderItemDTO;
 import com.ecommerce.order.dto.OrderResponse;
 import com.ecommerce.order.model.Order;
@@ -24,6 +26,9 @@ public class OrderService {
 
     private final CartService cartService;
     private final OrderRepository orderRepository;
+    // ep 291: StreamBridge instead of RabbitTemplate.
+    // The exchange/topic and the routing key now live in order-service.yml (binding createOrder-out-0).
+    private final StreamBridge streamBridge;
 
     @Transactional
     public Optional<OrderResponse> createOrder(String userId) {
@@ -59,6 +64,17 @@ public class OrderService {
 
         // Clear the cart
         cartService.clearCart(userId);
+
+        // Publish order created event
+        OrderCreatedEvent event = new OrderCreatedEvent(
+                savedOrder.getId(),
+                savedOrder.getUserId(),
+                savedOrder.getStatus(),
+                mapToOrderItemDTOs(savedOrder.getItems()),
+                savedOrder.getTotalAmount(),
+                savedOrder.getCreatedAt()
+        );
+        streamBridge.send("createOrder-out-0", event);
 
         return Optional.of(mapToOrderResponse(savedOrder));
     }
