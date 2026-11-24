@@ -14,7 +14,9 @@ spring:
     config:
       server:
         native:
-          search-locations: file:///Users/arafa/ja_projects/ecom_microservice/configserver/src/main/resources/config
+          # Relative to where the app is started. Works from configserver/ (./mvnw spring-boot:run)
+          # and from the repo root (IDE). Override with SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS.
+          search-locations: file:./src/main/resources/config/,file:./configserver/src/main/resources/config/
 
 server:
   port: 8888
