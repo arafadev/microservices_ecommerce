@@ -61,16 +61,19 @@
 			<artifactId>spring-cloud-stream</artifactId>
 		</dependency>
 
-		<!-- ep 298: switched from RabbitMQ to Kafka by changing the binder only
+		<!-- Studying Kafka (ep 269-299, docs/kafka-guide.html): the Kafka binder is on.
+		     To go back to RabbitMQ (docs/rabbitmq-async-guide.html): comment binder-kafka,
+		     uncomment binder-rabbit below, then flip the commented blocks in config/order-service.yml. -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+		</dependency>
+		<!-- RabbitMQ binder (ep 291-294)
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
 		</dependency>
 		-->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-		</dependency>
 
 
 		<dependency>
