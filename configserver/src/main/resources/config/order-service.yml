@@ -3,7 +3,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/ecommerce
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-  # ep 298: not used anymore (Kafka binder)
+  # Studying Kafka (ep 298): not used. To go back to RabbitMQ, uncomment this block
+  # and the "rabbit" block below, and comment "kafka".
   # rabbitmq:
   #   host: ${RABBITMQ_HOST:localhost}
   #   port: ${RABBITMQ_PORT:5672}
@@ -17,13 +18,13 @@ spring:
     stream:
       bindings:
         createOrder-out-0:
-          destination: order.exchange          # Kafka: the topic name (was the RabbitMQ exchange)
+          destination: order.exchange          # RabbitMQ: the exchange (Kafka: the topic name)
           content-type: application/json
-      # ep 298: Kafka binder
+      # ep 298: Kafka binder (where Kafka is)
       kafka:
         binder:
           brokers: localhost:9092
-      # ep 291 (RabbitMQ only), not needed with Kafka:
+      # ep 291 (RabbitMQ only): the routing key every message carries. Kafka has no routing keys.
       # rabbit:
       #   bindings:
       #     createOrder-out-0:

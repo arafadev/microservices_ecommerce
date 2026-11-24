@@ -1,7 +1,8 @@
 spring:
   application:
     name: notification
-  # ep 298: not used anymore (Kafka binder)
+  # Studying Kafka (ep 298): not used. To go back to RabbitMQ, uncomment this block
+  # and the "rabbit" block below, and comment "kafka".
   # rabbitmq:
   #   host: ${RABBITMQ_HOST:localhost}
   #   port: ${RABBITMQ_PORT:5672}
@@ -19,12 +20,19 @@ spring:
         definition: orderCreated
       bindings:
         orderCreated-in-0:
-          destination: order.exchange     # Kafka: the topic name (with RabbitMQ it was the exchange)
-          group: notification-group       # Kafka: the consumer group (with RabbitMQ: queue order.exchange.notification-group)
-      # ep 298: Kafka binder
+          destination: order.exchange     # RabbitMQ: the exchange (Kafka: the topic name)
+          group: notification-group       # RabbitMQ: queue "order.exchange.notification-group" (Kafka: the consumer group)
+      # ep 298: Kafka binder (where Kafka is)
       kafka:
         binder:
           brokers: localhost:9092
+      # RabbitMQ only: bind the queue with "order.tracking" like ep 6 did.
+      # Without it Stream binds with "#" (every routing key). Kafka has no routing keys.
+      # rabbit:
+      #   bindings:
+      #     orderCreated-in-0:
+      #       consumer:
+      #         binding-routing-key: order.tracking
 
 server:
   port: 8084

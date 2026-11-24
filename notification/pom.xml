@@ -43,16 +43,19 @@
 			<artifactId>spring-cloud-stream</artifactId>
 		</dependency>
 
-		<!-- ep 298: switched from RabbitMQ to Kafka by changing the binder only
+		<!-- Studying Kafka (ep 269-299, docs/kafka-guide.html): the Kafka binder is on.
+		     To go back to RabbitMQ (docs/rabbitmq-async-guide.html): comment binder-kafka,
+		     uncomment binder-rabbit below, then flip the commented blocks in application.yaml. -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+		</dependency>
+		<!-- RabbitMQ binder (ep 291-294)
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
 		</dependency>
 		-->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
-		</dependency>
 
 		<!-- ep 299: JSON (de)serialization for the Kafka binder.
 		     In the course (older Boot) the consumer failed with ClassCastException without these.
