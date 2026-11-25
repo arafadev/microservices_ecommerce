@@ -80,9 +80,20 @@
 				<configuration>
 					<from>
 						<image>gcr.io/distroless/java21</image>
+						<!-- Native images for Intel/AMD and Apple Silicon/ARM hosts -->
+						<platforms>
+							<platform>
+								<architecture>amd64</architecture>
+								<os>linux</os>
+							</platform>
+							<platform>
+								<architecture>arm64</architecture>
+								<os>linux</os>
+							</platform>
+						</platforms>
 					</from>
 					<to>
-						<image>dcode007/config-server</image>
+						<image>ecom/config-server</image>
 					</to>
 					<!--					<auth>-->
 					<!--						<username>${env.DOCKER_USERNAME}</username>-->

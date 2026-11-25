@@ -31,36 +31,32 @@
 		<spring-cloud.version>2025.1.2</spring-cloud.version>
 	</properties>
 	<dependencies>
-		<!-- ep 292: no REST APIs here, so plain spring-boot-starter instead of webmvc -->
+		<!-- No REST API in this service: plain spring-boot-starter instead of webmvc -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
-		<!-- ep 292: Spring Cloud Stream replaces spring-boot-starter-amqp -->
+		<!-- Spring Cloud Stream: broker-agnostic messaging -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream</artifactId>
 		</dependency>
 
-		<!-- Studying Kafka (ep 269-299, docs/kafka-guide.html): the Kafka binder is on.
-		     To go back to RabbitMQ (docs/rabbitmq-async-guide.html): comment binder-kafka,
+		<!-- Kafka binder is active. To switch to RabbitMQ: comment binder-kafka,
 		     uncomment binder-rabbit below, then flip the commented blocks in application.yaml. -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-kafka</artifactId>
 		</dependency>
-		<!-- RabbitMQ binder (ep 291-294)
+		<!-- RabbitMQ binder
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
 		</dependency>
 		-->
 
-		<!-- ep 299: JSON (de)serialization for the Kafka binder.
-		     In the course (older Boot) the consumer failed with ClassCastException without these.
-		     On Boot 4 / Spring Cloud Stream 5 it already worked, because Jackson 3 comes in
-		     transitively with spring-cloud-stream. Kept to make the JSON dependency explicit. -->
+		<!-- Explicit JSON (de)serialization support for OrderCreatedEvent payloads -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -130,6 +126,30 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.google.cloud.tools</groupId>
+				<artifactId>jib-maven-plugin</artifactId>
+				<version>3.4.6</version>
+				<configuration>
+					<from>
+						<image>gcr.io/distroless/java21</image>
+						<!-- Native images for Intel/AMD and Apple Silicon/ARM hosts -->
+						<platforms>
+							<platform>
+								<architecture>amd64</architecture>
+								<os>linux</os>
+							</platform>
+							<platform>
+								<architecture>arm64</architecture>
+								<os>linux</os>
+							</platform>
+						</platforms>
+					</from>
+					<to>
+						<image>ecom/notification-service</image>
+					</to>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -3,8 +3,9 @@ services:
     container_name: db
     image: postgres:14
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
+      # Same variables the services use, so the credentials always match (.env)
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
       POSTGRES_DB: ecommerce
       PGDATA: /var/lib/postgresql/data
     volumes:
@@ -93,8 +94,8 @@ services:
     container_name: rabbitmq
     image: rabbitmq:3-management
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
       - "5672:5672"   # RabbitMQ Message Broker
       - "15672:15672" # RabbitMQ Management UI (http://localhost:15672)
@@ -122,8 +123,7 @@ services:
       - loki
 
   config-server:
-#    build: ../../configserver
-    image: dcode007/config-server
+    image: ecom/config-server
     container_name: config-server
     ports:
       - 8888:8888
@@ -138,29 +138,17 @@ services:
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
     volumes:
       - ./../../configserver/src/main/resources/config:/config
-    healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://localhost:8888/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   eureka:
-#    build: ../../eureka
-    image: dcode007/eureka-server
+    image: ecom/eureka-server
     container_name: eureka
     ports:
       - 8761:8761
     networks:
       - my-network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   gateway-service:
-#    build: ../../gateway
-    image: dcode007/gateway-service
+    image: ecom/gateway-service
     container_name: gateway
 #    mem_limit: 700m
     ports:
@@ -179,8 +167,7 @@ services:
     restart: on-failure
 
   user-service:
-#    build: ../../user
-    image: dcode007/user-service
+    image: ecom/user-service
     container_name: user-service
 #    mem_limit: 700m
 #    ports:
@@ -204,8 +191,7 @@ services:
     restart: on-failure
 
   product-service:
-#    build: ../../product
-    image: dcode007/product-service
+    image: ecom/product-service
     container_name: product-service
 #    mem_limit: 700m
 #    ports:
@@ -230,8 +216,7 @@ services:
     restart: on-failure
 
   order-service:
-#    build: ../../order
-    image: dcode007/order-service
+    image: ecom/order-service
     container_name: order-service
 #    mem_limit: 700m
 #    ports:
@@ -256,8 +241,7 @@ services:
     restart: on-failure
 
   notification-service:
-    #    build: ../../order
-    image: dcode007/notification-service
+    image: ecom/notification-service
     container_name: notification-service
     #    mem_limit: 700m
     environment:
