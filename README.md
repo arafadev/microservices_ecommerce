@@ -349,7 +349,8 @@ curl -X POST http://localhost:8080/api/orders \
 | pgAdmin | <http://localhost:5050> | PostgreSQL administration |
 | Actuator | `http://localhost:<port>/actuator` | Health, metrics, circuit breaker state |
 
-Service logs are written to `logs/<service>.log` (rolling, 5 MB × 7 days).
+Service logs are written to `logs/<service>.log` (rolling, 5 MB × 7 days) and shipped to Loki by Grafana Alloy,
+whether a service is started from the repository root or from its own folder. In Docker, container output is collected too.
 
 ---
 
