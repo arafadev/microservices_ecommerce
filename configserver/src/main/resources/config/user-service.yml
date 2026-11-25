@@ -1,8 +1,8 @@
 spring:
-  data:
-    mongodb:
-      uri: ${MONGO_URI}
-      database: ecom_user
+  # Spring Boot 4 reads spring.mongodb.* (spring.data.mongodb.uri/database are no longer applied)
+  mongodb:
+    uri: ${MONGO_URI}
+    database: ecom_user
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}

@@ -1,0 +1,7 @@
+# Active with SPRING_PROFILES_ACTIVE=docker: reach the broker by its container name
+spring:
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: ${KAFKA_BROKERS:kafka:9092}
