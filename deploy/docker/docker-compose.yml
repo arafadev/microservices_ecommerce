@@ -301,7 +301,7 @@ services:
     volumes:
       - ./logging/alloy-local-config.yaml:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ../../logs:/logs-parent:ro
+      - ../..:/repo:ro   # reads logs/ and <service>/logs/ written by services run on the host
     command:  run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     ports:
       - 12345:12345
@@ -311,7 +311,8 @@ services:
       - loki
 
   minio:
-    image: minio/minio
+    # minio/minio is no longer published on Docker Hub
+    image: cgr.dev/chainguard/minio:latest
     entrypoint:
       - sh
       - -euc
@@ -329,7 +330,7 @@ services:
     volumes:
       - ./.data/minio:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: [ "CMD", "mc", "ready", "local" ]
       interval: 15s
       timeout: 20s
       retries: 5

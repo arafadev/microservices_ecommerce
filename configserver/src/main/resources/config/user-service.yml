@@ -41,7 +41,7 @@ keycloak:
   admin:
     username: user
     password: user
-    server-url: http://keycloak:8080
+    server-url: http://localhost:8443
     realm: ecom-app
     #    client-uid and client-id not created yet
     client-id: admin-cli
