@@ -7,7 +7,7 @@ Service discovery, centralized config, an API gateway with rate limiting and cir
 OAuth2 security with Keycloak, event-driven messaging with Kafka / RabbitMQ, and full observability.
 
 ![Java](https://img.shields.io/badge/Java-17%20%7C%2021-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.x-6DB33F?logo=springboot&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4%20%7C%204.x-6DB33F?logo=springboot&logoColor=white)
 ![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2025.1-6DB33F?logo=spring&logoColor=white)
 ![Keycloak](https://img.shields.io/badge/Keycloak-26-4D4D4D?logo=keycloak&logoColor=white)
 ![Kafka](https://img.shields.io/badge/Apache%20Kafka-231F20?logo=apachekafka&logoColor=white)
@@ -32,7 +32,8 @@ OAuth2 security with Keycloak, event-driven messaging with Kafka / RabbitMQ, and
 - [API Reference](#-api-reference)
 - [Observability](#-observability)
 - [Project Structure](#-project-structure)
-- [Documentation](#-documentation)
+- [Load Testing](#-load-testing)
+- [Project History](#-project-history)
 
 ---
 
@@ -122,7 +123,7 @@ and containerized on its own.
 
 | Area | Technologies |
 |---|---|
-| **Language & Framework** | Java 17 / 21, Spring Boot 4, Spring Web MVC, Spring WebFlux (gateway) |
+| **Language & Framework** | Java 17 / 21, Spring Boot 4 (Config Server on 3.4), Spring Web MVC, Spring WebFlux (gateway) |
 | **Spring Cloud** | Gateway, Netflix Eureka, Config Server, Cloud Bus, Cloud Stream, Cloud Function, LoadBalancer |
 | **Security** | Keycloak 26, OAuth2 Resource Server (JWT), Authorization Code + PKCE, Keycloak Admin REST API |
 | **Messaging** | Apache Kafka, RabbitMQ (switchable Spring Cloud Stream binders) |
@@ -131,7 +132,7 @@ and containerized on its own.
 | **Inter-service calls** | `RestClient` + HTTP Interface clients (`HttpServiceProxyFactory`) with `@LoadBalanced` |
 | **Observability** | Micrometer, Prometheus, Grafana, Loki, Grafana Alloy, Zipkin |
 | **Containers** | Docker, Docker Compose, Jib (daemonless image builds) |
-| **Testing tools** | JMeter (gateway rate-limit test plan), Postman |
+| **Testing tools** | JMeter (gateway rate-limit test plan) |
 
 ---
 
@@ -225,9 +226,12 @@ docker compose up -d postgres mongo redis rabbitmq zookeeper kafka keycloak zipk
 
 ### 5. Run the services
 
-Start them in this order (each in its own terminal):
+Export the variables that have no default (use the same password you put in `deploy/docker/.env`),
+then start the services in this order, each in its own terminal:
 
 ```bash
+export DB_USER=postgres DB_PASSWORD=<your-db-password> MONGO_URI=mongodb://localhost:27017
+
 (cd configserver    && ./mvnw spring-boot:run)   # 1. config first
 (cd eureka          && ./mvnw spring-boot:run)   # 2. registry
 (cd product-service && ./mvnw spring-boot:run)
@@ -261,8 +265,9 @@ docker compose up -d
 > Config Server is ready, so allow a couple of minutes before everything shows **UP** in Eureka.
 > Jib builds a native image for your machine (Intel/AMD or Apple Silicon).
 
-Services started with the `docker` profile load `*-docker.yml` from the Config Server, which points
-them at container hostnames (`postgres`, `mongo`, `rabbitmq`, `keycloak`, …) instead of `localhost`.
+Services started with the `docker` profile load `*-docker.yml` from the Config Server (the Notification Service
+uses its own `application-docker.yml`), which points them at container hostnames (`postgres`, `mongo`, `kafka`,
+`rabbitmq`, `keycloak`, …) instead of `localhost`.
 
 ---
 
@@ -344,7 +349,7 @@ curl -X POST http://localhost:8080/api/orders \
 | pgAdmin | <http://localhost:5050> | PostgreSQL administration |
 | Actuator | `http://localhost:<port>/actuator` | Health, metrics, circuit breaker state |
 
-Service logs are written to `logs/<service>.log` (rolling, 5 MB × 7 days) and shipped to Loki by Grafana Alloy.
+Service logs are written to `logs/<service>.log` (rolling, 5 MB × 7 days).
 
 ---
 
@@ -360,7 +365,7 @@ ecom_microservice/
 ├── user-service/       # Users + Keycloak provisioning (MongoDB)
 ├── order-service/      # Cart & orders, publishes OrderCreatedEvent (PostgreSQL)
 ├── notification/       # Event consumer (Spring Cloud Stream)
-├── deploy/docker/      # docker-compose, Prometheus, Loki & Alloy config, DB init script
+├── deploy/docker/      # docker-compose, .env.example, Prometheus, Loki & Alloy config
 └── load-tests/jmeter/  # JMeter plan that verifies the gateway rate limiter
 ```
 
