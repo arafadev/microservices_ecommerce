@@ -1,0 +1,15 @@
+# Test-only overrides. This file replaces src/main/resources/application.yml on
+# the test classpath (it is not merged with it), so the config server import is
+# absent here by design; spring.cloud.config.enabled=false keeps the config
+# client from demanding a spring.config.import it no longer has.
+# auto-index-creation=false keeps the Mongo connection lazy, so contextLoads
+# verifies the Spring wiring without needing a reachable database.
+spring:
+  cloud:
+    config:
+      enabled: false
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/users_db_test
+      auto-index-creation: false
