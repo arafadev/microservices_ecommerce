@@ -103,18 +103,18 @@ flowchart LR
 
 ## 🧩 Services
 
-| Service | Port | Responsibility | Storage | Repository |
+| Service | Port | Responsibility | Storage | Source |
 |---|---|---|---|---|
 | **API Gateway** | `8080` | Single entry point, JWT validation, routing, rate limiting, retries, circuit breaker | Redis | [`gateway/`](gateway) |
 | **Eureka Server** | `8761` | Service registry & discovery | — | [`eureka/`](eureka) |
 | **Config Server** | `8888` | Centralized configuration (native backend) + Spring Cloud Bus | — | [`configserver/`](configserver) |
-| **Product Service** | `8081` | Product catalog CRUD | PostgreSQL | [arafadev/product-service](https://github.com/arafadev/product-service) |
-| **User Service** | `8082` | User management, provisions users & roles in Keycloak | MongoDB | [arafadev/user-service](https://github.com/arafadev/user-service) |
-| **Order Service** | `8083` | Cart & checkout, calls Product/User services, publishes order events | PostgreSQL | [arafadev/order](https://github.com/arafadev/order) |
+| **Product Service** | `8081` | Product catalog CRUD | PostgreSQL | [`product-service/`](product-service) |
+| **User Service** | `8082` | User management, provisions users & roles in Keycloak | MongoDB | [`user-service/`](user-service) |
+| **Order Service** | `8083` | Cart & checkout, calls Product/User services, publishes order events | PostgreSQL | [`order-service/`](order-service) |
 | **Notification Service** | `8084` | Consumes `OrderCreatedEvent` (Spring Cloud Function) | — | [`notification/`](notification) |
 
-> **Note:** Product, User and Order services live in their own Git repositories and are included here as
-> **Git submodules**. Clone with `--recurse-submodules` to get them (see [Getting Started](#-getting-started)).
+Each service is an independent Spring Boot application with its own Maven wrapper and can be built, run
+and containerized on its own.
 
 ---
 
@@ -190,11 +190,9 @@ sequenceDiagram
 ### 1. Clone the repository
 
 ```bash
-git clone --recurse-submodules https://github.com/arafadev/microservices_ecommerce.git
+git clone https://github.com/arafadev/microservices_ecommerce.git
 cd microservices_ecommerce
 ```
-
-Already cloned without submodules? Run `git submodule update --init`.
 
 ### 2. Configure environment variables
 
@@ -225,8 +223,6 @@ docker compose up -d postgres mongo redis rabbitmq zookeeper kafka keycloak zipk
 3. Create a public client **`oauth2-pkce`** (Standard flow + PKCE `S256`) and add client roles such as `USER`, `PRODUCT`, `ORDER`.
 4. For user provisioning, give the account used by the User Service the `manage-users` and `view-clients` roles from `realm-management`.
 
-Step-by-step notes live in [`docs/4- Securing eCommerce Microservices Project with Keycloak + OAuth2`](docs).
-
 ### 5. Run the services
 
 Start them in this order (each in its own terminal):
@@ -249,14 +245,21 @@ Open the Eureka dashboard at <http://localhost:8761> and check that every servic
 
 ### 🐳 Run everything with Docker
 
-Images are built with **Jib** (no Dockerfile needed):
+Every service is containerized with **Jib** (no Dockerfile needed) into a local `ecom/<service>` image:
 
 ```bash
-(cd product-service && ./mvnw compile jib:dockerBuild)
-# repeat for each service, then:
+for s in configserver eureka gateway product-service user-service order-service notification; do
+  (cd $s && ./mvnw -q compile jib:dockerBuild)
+done
+
 cd deploy/docker
+cp .env.example .env    # if you haven't already
 docker compose up -d
 ```
+
+> Give Docker Desktop at least **6 GB of RAM**. On the first start the services restart automatically until the
+> Config Server is ready, so allow a couple of minutes before everything shows **UP** in Eureka.
+> Jib builds a native image for your machine (Intel/AMD or Apple Silicon).
 
 Services started with the `docker` profile load `*-docker.yml` from the Config Server, which points
 them at container hostnames (`postgres`, `mongo`, `rabbitmq`, `keycloak`, …) instead of `localhost`.
@@ -353,28 +356,31 @@ ecom_microservice/
 ├── eureka/             # Service registry
 ├── configserver/       # Config Server
 │   └── src/main/resources/config/   # <service>.yml and <service>-docker.yml
-├── product-service/    # nested repo → arafadev/product-service
-├── user-service/       # nested repo → arafadev/user-service
-├── order-service/      # nested repo → arafadev/order
+├── product-service/    # Product catalog (PostgreSQL)
+├── user-service/       # Users + Keycloak provisioning (MongoDB)
+├── order-service/      # Cart & orders, publishes OrderCreatedEvent (PostgreSQL)
 ├── notification/       # Event consumer (Spring Cloud Stream)
 ├── deploy/docker/      # docker-compose, Prometheus, Loki & Alloy config, DB init script
-├── additional/         # Experiments: Kafka producer/consumer, Keycloak OAuth2 flow demos, Loki/Prometheus labs
-└── docs/               # Study notes and HTML guides for every topic
+└── load-tests/jmeter/  # JMeter plan that verifies the gateway rate limiter
 ```
 
 ---
 
-## 📚 Documentation
+## 🧪 Load Testing
 
-The [`docs/`](docs) folder holds detailed guides written while building the project:
+[`load-tests/jmeter/gateway-rate-limit.jmx`](load-tests/jmeter/gateway-rate-limit.jmx) fires concurrent requests
+at the gateway to show the Redis rate limiter returning `429 Too Many Requests` once the burst capacity is used up.
 
-- Asynchronous communication with RabbitMQ
-- Apache Kafka
-- Moving to Spring Cloud Function & Spring Cloud Stream
-- Securing the platform with Keycloak + OAuth2 (PKCE, roles, Admin API)
-- Fault tolerance with Resilience4j
-- Docker & containerization with Jib
-- Eureka, inter-service communication and the full microservices lifecycle
+```bash
+jmeter -n -t load-tests/jmeter/gateway-rate-limit.jmx -l results.jtl
+```
+
+---
+
+## 🧬 Project History
+
+The platform started as a single Spring Boot monolith and was split into microservices step by step.
+The original monolith is preserved under the [`v0-monolith`](https://github.com/arafadev/microservices_ecommerce/tree/v0-monolith) tag.
 
 ---
 
