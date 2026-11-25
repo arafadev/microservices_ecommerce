@@ -3,8 +3,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/ecommerce
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-  # Studying Kafka (ep 298): not used. To go back to RabbitMQ, uncomment this block
-  # and the "rabbit" block below, and comment "kafka".
+  # Messaging broker: Kafka is active. To use RabbitMQ instead, uncomment this block and the
+  # "rabbit" block below, comment "kafka", and swap the binder dependency in order-service/pom.xml.
   # rabbitmq:
   #   host: ${RABBITMQ_HOST:localhost}
   #   port: ${RABBITMQ_PORT:5672}
@@ -13,18 +13,18 @@ spring:
   #   virtual-host: ${RABBITMQ_VHOST:/}
   #   connection-timeout: 30000
 
-  # ep 291: Spring Cloud Stream. StreamBridge sends to the binding "createOrder-out-0"
+  # Spring Cloud Stream: OrderService publishes OrderCreatedEvent through StreamBridge to "createOrder-out-0"
   cloud:
     stream:
       bindings:
         createOrder-out-0:
           destination: order.exchange          # RabbitMQ: the exchange (Kafka: the topic name)
           content-type: application/json
-      # ep 298: Kafka binder (where Kafka is)
+      # Kafka binder
       kafka:
         binder:
           brokers: localhost:9092
-      # ep 291 (RabbitMQ only): the routing key every message carries. Kafka has no routing keys.
+      # RabbitMQ only: the routing key every message carries (Kafka has no routing keys)
       # rabbit:
       #   bindings:
       #     createOrder-out-0:
@@ -40,15 +40,6 @@ spring:
 
 server:
   port: 8083
-
-# ep 294/298: was used by RabbitMqConfiguration and RabbitTemplate, both gone now
-# rabbitmq:
-#   exchange:
-#     name: order.exchange
-#   queue:
-#     name: order.queue
-#   routing:
-#     key: order.tracking
 
 management:
   endpoints:

@@ -26,8 +26,7 @@ public class OrderService {
 
     private final CartService cartService;
     private final OrderRepository orderRepository;
-    // ep 291: StreamBridge instead of RabbitTemplate.
-    // The exchange/topic and the routing key now live in order-service.yml (binding createOrder-out-0).
+    // Publishes to the "createOrder-out-0" binding; destination and broker are set in order-service.yml
     private final StreamBridge streamBridge;
 
     @Transactional

@@ -1,8 +1,8 @@
 spring:
   application:
     name: notification
-  # Studying Kafka (ep 298): not used. To go back to RabbitMQ, uncomment this block
-  # and the "rabbit" block below, and comment "kafka".
+  # Messaging broker: Kafka is active. To use RabbitMQ instead, uncomment this block and the
+  # "rabbit" block below, comment "kafka", and swap the binder dependency in pom.xml.
   # rabbitmq:
   #   host: ${RABBITMQ_HOST:localhost}
   #   port: ${RABBITMQ_PORT:5672}
@@ -11,7 +11,7 @@ spring:
   #   virtual-host: ${RABBITMQ_VHOST:/}
   #   connection-timeout: 30000
 
-  # ep 292: Spring Cloud Function + Spring Cloud Stream
+  # Spring Cloud Function + Spring Cloud Stream
   cloud:
     function:
       definition: orderCreated            # the Consumer<OrderCreatedEvent> bean in OrderEventConsumer
@@ -22,11 +22,11 @@ spring:
         orderCreated-in-0:
           destination: order.exchange     # RabbitMQ: the exchange (Kafka: the topic name)
           group: notification-group       # RabbitMQ: queue "order.exchange.notification-group" (Kafka: the consumer group)
-      # ep 298: Kafka binder (where Kafka is)
+      # Kafka binder
       kafka:
         binder:
           brokers: localhost:9092
-      # RabbitMQ only: bind the queue with "order.tracking" like ep 6 did.
+      # RabbitMQ only: bind the queue with the "order.tracking" routing key.
       # Without it Stream binds with "#" (every routing key). Kafka has no routing keys.
       # rabbit:
       #   bindings:
@@ -37,11 +37,3 @@ spring:
 server:
   port: 8084
 
-# ep 294/298: was used by RabbitMqConfiguration and @RabbitListener, both gone now
-# rabbitmq:
-#   exchange:
-#     name: order.exchange
-#   queue:
-#     name: order.queue
-#   routing:
-#     key: order.tracking
