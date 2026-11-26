@@ -26,6 +26,9 @@ out/
 pgdata/
 mongo-data/
 
+### Personal study notes (kept locally, never pushed) ###
+docs/
+
 ### Logs ###
 logs/
 *.log
